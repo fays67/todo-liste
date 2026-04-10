@@ -1,60 +1,70 @@
+<?php
+require_once 'config/connexion.php';
+
+// AJOUTER UNE TÂCHE (Requête préparée)
+if (!empty($_POST['titre'])) {
+    $ins = $pdo->prepare("INSERT INTO taches (titre, description, priorite, statut) VALUES (?, ?, ?, 'a_faire')");
+    $ins->execute([$_POST['titre'], $_POST['description'], $_POST['priorite']]);
+    header("Location: index.php");
+    exit();
+}
+
+// SUPPRIMER UNE TÂCHE
+if (isset($_GET['delete'])) {
+    $del = $pdo->prepare("DELETE FROM taches WHERE id = ?");
+    $del->execute([$_GET['delete']]);
+    header("Location: index.php");
+    exit();
+}
+
+// AFFICHER (Trié par priorité : Haute -> Moyenne -> Basse)
+$query = $pdo->query("SELECT * FROM taches ORDER BY FIELD(priorite, 'haute', 'moyenne', 'basse') ASC, date_creation DESC");
+$taches = $query->fetchAll(PDO::FETCH_ASSOC);
+?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ma Todo App</title>
-    <style>
-        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
-        input, textarea, select, button { padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
-        button { background: #28a745; color: white; border: none; cursor: pointer; }
-        button:hover { background: #218838; }
-        .task-list { border-top: 2px solid #eee; padding-top: 20px; }
-        .task-item { background: #fafafa; padding: 10px; margin-bottom: 10px; border-left: 5px solid #007bff; display: flex; justify-content: space-between; align-items: center; }
-        .priority-haute { border-left-color: #dc3545; }
-        .priority-moyenne { border-left-color: #ffc107; }
-        .priority-basse { border-left-color: #28a745; }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <div class="container">
+        <h1>📝 Mes Tâches</h1>
 
-<div class="container">
-    <h1> Ma Liste de Tâches</h1>
+        <form method="POST" id="task-form">
+            <input type="text" name="titre" id="titre" placeholder="Titre de la tâche (obligatoire)">
+            <textarea name="description" placeholder="Description"></textarea>
+            <select name="priorite">
+                <option value="basse">Priorité : Basse</option>
+                <option value="moyenne" selected>Priorité : Moyenne</option>
+                <option value="haute">Priorité : Haute</option>
+            </select>
+            <button type="submit">Ajouter</button>
+        </form>
 
-    <form action="" method="POST">
-        <input type="text" name="titre" placeholder="Titre de la tâche" required>
-        <textarea name="description" placeholder="Description (optionnel)"></textarea>
-        
-        <label for="priorite">Priorité :</label>
-        <select name="priorite">
-            <option value="basse">Basse</option>
-            <option value="moyenne" selected>Moyenne</option>
-            <option value="haute">Haute</option>
-        </select>
+        <div class="filters">
+            <label>Filtrer par statut : </label>
+            <select id="filter-select">
+                <option value="toutes">Toutes</option>
+                <option value="a_faire">À faire</option>
+                <option value="termine">Terminées</option>
+            </select>
+        </div>
 
-        <label for="date_limite">Date limite :</label>
-        <input type="datetime-local" name="date_limite">
-
-        <button type="submit">Ajouter la tâche</button>
-    </form>
-
-    <div class="task-list">
-        <h2>Tâches à faire</h2>
-        
-        <div class="task-item priority-haute">
-            <div>
-                <strong>Réviser le SQL</strong> - <small>Priorité: Haute</small>
-                <p>Pratiquer les requêtes INSERT et UPDATE</p>
-            </div>
-            <div>
-                <button style="background: #ffc107;">Modifier</button>
-                <button style="background: #dc3545;">Supprimer</button>
-            </div>
+        <div class="list">
+            <?php foreach ($taches as $t): ?>
+                <div class="task-item priority-<?= $t['priorite'] ?>" data-statut="<?= $t['statut'] ?>">
+                    <div class="content">
+                        <strong><?= htmlspecialchars($t['titre']) ?></strong>
+                        <p><?= htmlspecialchars($t['description']) ?></p>
+                    </div>
+                    <a href="index.php?delete=<?= $t['id'] ?>" class="btn-delete" onclick="return confirm('Supprimer ?')">X</a>
+                </div>
+            <?php endforeach; ?>
         </div>
     </div>
-</div>
-
+    <script src="js/script.js"></script>
 </body>
 </html>
