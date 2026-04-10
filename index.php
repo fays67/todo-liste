@@ -31,7 +31,7 @@ $taches = $query->fetchAll(PDO::FETCH_ASSOC);
 </head>
 <body>
     <div class="container">
-        <h1>📝 Mes Tâches</h1>
+        <h1> Mes Tâches</h1>
 
         <form method="POST" id="task-form">
             <input type="text" name="titre" id="titre" placeholder="Titre de la tâche (obligatoire)">
